@@ -1,7 +1,7 @@
 'use client';
 
 import { useTheme } from '@/contexts/ThemeContext';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -19,6 +19,47 @@ export default function AddAnimeModal({ isOpen, onClose, onAdd, tierName }: AddA
     const [imagePreview, setImagePreview] = useState<string>('');
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const modalRef = useRef<HTMLDivElement>(null);
+
+    // 클립보드 붙여넣기 이벤트 리스너
+    useEffect(() => {
+        // 모달이 열려있을 때만 작동
+        if (!isOpen) return;
+
+        const handlePaste = (e: ClipboardEvent) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+
+            // 클립보드에서 이미지 찾기
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+
+                if (item.type.indexOf('image') !== -1) {
+                    e.preventDefault(); // 기본 붙여넣기 동작 방지
+
+                    const file = item.getAsFile();
+                    if (file) {
+                        setImageFile(file);
+
+                        // 미리보기 생성
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            setImagePreview(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                    break;
+                }
+            }
+        };
+
+        // 전역 이벤트 리스너 등록
+        window.addEventListener('paste', handlePaste);
+
+        return () => {
+            window.removeEventListener('paste', handlePaste);
+        };
+    }, [isOpen]);
 
     // 모달이 닫히지 않았으면 아무것도 렌더링 안 함
     if (!isOpen) return null;
@@ -72,11 +113,23 @@ export default function AddAnimeModal({ isOpen, onClose, onAdd, tierName }: AddA
         }
     };
 
+    // 이미지 삭제
+    const handleRemoveImage = () => {
+        setImageFile(null);
+        setImagePreview('');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className={`w-full max-w-lg rounded-2xl p-6 ${
-                isDark ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200'
-            }`}>
+            <div
+                ref={modalRef}
+                className={`w-full max-w-lg rounded-2xl p-6 ${
+                    isDark ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200'
+                }`}
+            >
                 {/* 헤더 */}
                 <div className="flex items-center justify-between mb-6">
                     <h2 className={`text-2xl font-bold ${
@@ -133,19 +186,30 @@ export default function AddAnimeModal({ isOpen, onClose, onAdd, tierName }: AddA
                     />
 
                     {!imagePreview ? (
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className={`w-full h-48 rounded-lg border-2 border-dashed transition-colors flex flex-col items-center justify-center gap-2 ${
-                                isDark
-                                    ? 'border-gray-700 hover:border-gray-600 text-gray-400 hover:bg-gray-800'
-                                    : 'border-gray-300 hover:border-gray-400 text-gray-500 hover:bg-gray-50'
-                            }`}
-                        >
-                            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span>이미지 선택</span>
-                        </button>
+                        <div>
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className={`w-full h-48 rounded-lg border-2 border-dashed transition-colors flex flex-col items-center justify-center gap-2 ${
+                                    isDark
+                                        ? 'border-gray-700 hover:border-gray-600 text-gray-400 hover:bg-gray-800'
+                                        : 'border-gray-300 hover:border-gray-400 text-gray-500 hover:bg-gray-50'
+                                }`}
+                            >
+                                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span className="font-medium">이미지 선택 또는 붙여넣기</span>
+                                <span className="text-xs">
+                  <kbd className={`px-2 py-1 rounded ${isDark ? 'bg-gray-800' : 'bg-gray-200'}`}>Ctrl</kbd> +
+                  <kbd className={`px-2 py-1 rounded ml-1 ${isDark ? 'bg-gray-800' : 'bg-gray-200'}`}>V</kbd>
+                </span>
+                            </button>
+                            <p className={`text-xs text-center mt-2 ${
+                                isDark ? 'text-gray-500' : 'text-gray-500'
+                            }`}>
+                                💡 다른 곳에서 이미지를 복사한 후 Ctrl+V로 붙여넣기 가능
+                            </p>
+                        </div>
                     ) : (
                         <div className="relative">
                             <img
@@ -154,10 +218,7 @@ export default function AddAnimeModal({ isOpen, onClose, onAdd, tierName }: AddA
                                 className="w-full h-64 object-cover rounded-lg"
                             />
                             <button
-                                onClick={() => {
-                                    setImageFile(null);
-                                    setImagePreview('');
-                                }}
+                                onClick={handleRemoveImage}
                                 className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
