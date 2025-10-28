@@ -1,11 +1,10 @@
 'use client';
 
 import { useTheme } from '@/contexts/ThemeContext';
-import { useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { auth, db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, collection } from 'firebase/firestore';
-import AddAnimeModal from '@/components/AddAnimeModal';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 
 // 티어 타입 정의
 type TierType = '국가권력급' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
@@ -25,16 +24,20 @@ interface TierData {
     animes: AnimeItem[];
 }
 
-export default function MyTierPage() {
-    const { isDark } = useTheme();
-    const router = useRouter();
-    const [user, setUser] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
+// 사용자 정보 타입
+interface UserInfo {
+    displayName: string;
+    photoURL: string;
+    email: string;
+}
 
-    // 모달 상태
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedTier, setSelectedTier] = useState<TierType | null>(null);
+export default function ProfilePage() {
+    const { isDark } = useTheme();
+    const params = useParams();
+    const userId = params.userId as string;
+
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+    const [loading, setLoading] = useState(true);
 
     // 티어 데이터
     const [tiers, setTiers] = useState<TierData[]>([
@@ -47,36 +50,24 @@ export default function MyTierPage() {
         { tier: 'F', color: 'from-gray-500 to-blue-500', desc: '쓰레기', animes: [] },
     ]);
 
-    // 로그인 확인
+    // 사용자 정보와 티어 데이터 불러오기
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((currentUser) => {
-            if (!currentUser) {
-                router.push('/login');
-            } else {
-                setUser(currentUser);
-                loadTierData(currentUser.uid);
-            }
-        });
-        return () => unsubscribe();
-    }, [router]);
+        loadProfileData();
+    }, [userId]);
 
-    // Firestore에서 티어 데이터 불러오기
-    const loadTierData = async (userId: string) => {
+    const loadProfileData = async () => {
         setLoading(true);
         try {
-            // 사용자 문서 체크
+            // 사용자 정보 불러오기
             const userDocRef = doc(db, 'users', userId);
             const userDoc = await getDoc(userDocRef);
 
             if (!userDoc.exists()) {
-                // 처음 접속한 사용자면 기본 데이터 생성
-                await setDoc(userDocRef, {
-                    displayName: auth.currentUser?.displayName || '익명',
-                    email: auth.currentUser?.email || '',
-                    photoURL: auth.currentUser?.photoURL || '',
-                    createdAt: new Date(),
-                });
+                alert('사용자를 찾을 수 없습니다.');
+                return;
             }
+
+            setUserInfo(userDoc.data() as UserInfo);
 
             // 각 티어별 데이터 불러오기
             const loadedTiers = await Promise.all(
@@ -93,80 +84,10 @@ export default function MyTierPage() {
 
             setTiers(loadedTiers);
         } catch (error) {
-            console.error('데이터 불러오기 실패:', error);
+            console.error('프로필 데이터 불러오기 실패:', error);
             alert('데이터를 불러오는데 실패했습니다.');
         } finally {
             setLoading(false);
-        }
-    };
-
-    // Firestore에 저장
-    const handleSave = async () => {
-        if (!user) return;
-
-        setSaving(true);
-        try {
-            // 각 티어별로 저장
-            await Promise.all(
-                tiers.map(async (tierData) => {
-                    const tierDocRef = doc(db, 'users', user.uid, 'tiers', tierData.tier);
-                    await setDoc(tierDocRef, {
-                        animes: tierData.animes,
-                        updatedAt: new Date(),
-                    });
-                })
-            );
-
-            alert('저장되었습니다!');
-        } catch (error) {
-            console.error('저장 실패:', error);
-            alert('저장에 실패했습니다. 다시 시도해주세요.');
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    // "애니 추가" 버튼 클릭
-    const handleOpenModal = (tier: TierType) => {
-        setSelectedTier(tier);
-        setIsModalOpen(true);
-    };
-
-    // 모달 닫기
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setSelectedTier(null);
-    };
-
-    // 애니 추가
-    const handleAddAnime = (title: string, imageUrl: string) => {
-        if (!selectedTier) return;
-
-        const newAnime: AnimeItem = {
-            id: Date.now().toString(),
-            title,
-            imageUrl,
-        };
-
-        setTiers((prevTiers) =>
-            prevTiers.map((tierData) =>
-                tierData.tier === selectedTier
-                    ? { ...tierData, animes: [...tierData.animes, newAnime] }
-                    : tierData
-            )
-        );
-    };
-
-    // 애니 삭제
-    const handleDeleteAnime = (tier: TierType, animeId: string) => {
-        if (confirm('이 애니를 삭제하시겠습니까?')) {
-            setTiers((prevTiers) =>
-                prevTiers.map((tierData) =>
-                    tierData.tier === tier
-                        ? { ...tierData, animes: tierData.animes.filter((anime) => anime.id !== animeId) }
-                        : tierData
-                )
-            );
         }
     };
 
@@ -183,23 +104,48 @@ export default function MyTierPage() {
         );
     }
 
+    if (!userInfo) {
+        return (
+            <div className={`min-h-screen flex items-center justify-center ${
+                isDark ? 'bg-black' : 'bg-white'
+            }`}>
+                <div className={`text-xl ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    사용자를 찾을 수 없습니다.
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className={`min-h-screen transition-colors duration-300 ${
             isDark ? 'bg-black' : 'bg-white'
         }`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {/* 헤더 */}
-                <div className="mb-8">
-                    <h1 className={`text-4xl font-bold mb-2 ${
-                        isDark ? 'text-white' : 'text-gray-900'
-                    }`}>
-                        내 애니 티어리스트
-                    </h1>
-                    <p className={`text-lg ${
-                        isDark ? 'text-gray-400' : 'text-gray-600'
-                    }`}>
-                        각 티어에 애니를 추가해보세요
-                    </p>
+                {/* 프로필 헤더 */}
+                <div className={`rounded-2xl p-8 mb-8 ${
+                    isDark
+                        ? 'bg-gray-900 border border-gray-800'
+                        : 'bg-white border border-gray-200'
+                }`}>
+                    <div className="flex items-center gap-6">
+                        <img
+                            src={userInfo.photoURL || '/default-avatar.png'}
+                            alt={userInfo.displayName}
+                            className="w-24 h-24 rounded-full object-cover"
+                        />
+                        <div>
+                            <h1 className={`text-4xl font-bold mb-2 ${
+                                isDark ? 'text-white' : 'text-gray-900'
+                            }`}>
+                                {userInfo.displayName}의 애니 티어리스트
+                            </h1>
+                            <p className={`text-lg ${
+                                isDark ? 'text-gray-400' : 'text-gray-600'
+                            }`}>
+                                {userInfo.email}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {/* 티어 리스트 */}
@@ -223,12 +169,9 @@ export default function MyTierPage() {
                                         {tierData.desc}
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => handleOpenModal(tierData.tier)}
-                                    className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-medium transition-colors backdrop-blur-sm"
-                                >
-                                    + 애니 추가
-                                </button>
+                                <div className="text-white text-sm font-medium">
+                                    {tierData.animes.length}개
+                                </div>
                             </div>
 
                             {/* 애니 목록 */}
@@ -244,7 +187,7 @@ export default function MyTierPage() {
                                         {tierData.animes.map((anime) => (
                                             <div
                                                 key={anime.id}
-                                                className={`rounded-lg overflow-hidden group relative ${
+                                                className={`rounded-lg overflow-hidden ${
                                                     isDark ? 'bg-gray-800' : 'bg-gray-100'
                                                 }`}
                                             >
@@ -254,15 +197,6 @@ export default function MyTierPage() {
                                                         alt={anime.title}
                                                         className="w-full h-full object-cover"
                                                     />
-                                                    {/* 삭제 버튼 */}
-                                                    <button
-                                                        onClick={() => handleDeleteAnime(tierData.tier, anime.id)}
-                                                        className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                        </svg>
-                                                    </button>
                                                 </div>
                                                 <div className="p-2">
                                                     <p className={`text-sm font-medium truncate ${
@@ -280,25 +214,24 @@ export default function MyTierPage() {
                     ))}
                 </div>
 
-                {/* 저장 버튼 */}
-                <div className="mt-8 flex justify-center">
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold text-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {saving ? '저장 중...' : '저장하기'}
-                    </button>
+                {/* 댓글 섹션 (다음 단계에서 추가) */}
+                <div className={`mt-12 rounded-2xl p-8 ${
+                    isDark
+                        ? 'bg-gray-900 border border-gray-800'
+                        : 'bg-white border border-gray-200'
+                }`}>
+                    <h2 className={`text-2xl font-bold mb-4 ${
+                        isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                        방명록
+                    </h2>
+                    <p className={`text-center py-8 ${
+                        isDark ? 'text-gray-600' : 'text-gray-400'
+                    }`}>
+                        댓글 기능은 다음 단계에서 추가됩니다
+                    </p>
                 </div>
             </div>
-
-            {/* 애니 추가 모달 */}
-            <AddAnimeModal
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}
-                onAdd={handleAddAnime}
-                tierName={selectedTier || ''}
-            />
         </div>
     );
 }

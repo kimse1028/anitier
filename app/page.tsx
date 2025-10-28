@@ -3,12 +3,22 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+
+interface UserProfile {
+    uid: string;
+    displayName: string;
+    photoURL: string;
+    email: string;
+}
 
 export default function HomePage() {
     const { isDark } = useTheme();
     const router = useRouter();
     const [user, setUser] = useState<any>(null);
+    const [users, setUsers] = useState<UserProfile[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -16,6 +26,33 @@ export default function HomePage() {
         });
         return () => unsubscribe();
     }, []);
+
+    // 모든 사용자 불러오기
+    useEffect(() => {
+        loadUsers();
+    }, []);
+
+    const loadUsers = async () => {
+        setLoading(true);
+        try {
+            const usersCollectionRef = collection(db, 'users');
+            const usersSnapshot = await getDocs(usersCollectionRef);
+
+            const usersList: UserProfile[] = [];
+            usersSnapshot.forEach((doc) => {
+                usersList.push({
+                    uid: doc.id,
+                    ...doc.data() as Omit<UserProfile, 'uid'>
+                });
+            });
+
+            setUsers(usersList);
+        } catch (error) {
+            console.error('사용자 목록 불러오기 실패:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className={`min-h-screen transition-colors duration-300 ${
@@ -86,29 +123,77 @@ export default function HomePage() {
                     </div>
                 </div>
 
-                {/* 사용자 목록 (나중에 추가할 부분) */}
+                {/* 사용자 목록 */}
                 <div>
                     <h2 className={`text-3xl font-bold mb-8 ${
                         isDark ? 'text-white' : 'text-gray-900'
                     }`}>
                         모든 사용자의 티어리스트
                     </h2>
-                    <div className={`text-center py-16 rounded-2xl ${
-                        isDark
-                            ? 'bg-gray-900 border border-gray-800'
-                            : 'bg-gray-50 border border-gray-200'
-                    }`}>
-                        <p className={`text-lg ${
-                            isDark ? 'text-gray-400' : 'text-gray-600'
+
+                    {loading ? (
+                        <div className={`text-center py-16 rounded-2xl ${
+                            isDark
+                                ? 'bg-gray-900 border border-gray-800'
+                                : 'bg-gray-50 border border-gray-200'
                         }`}>
-                            아직 등록된 티어리스트가 없습니다
-                        </p>
-                        <p className={`text-sm mt-2 ${
-                            isDark ? 'text-gray-500' : 'text-gray-500'
+                            <p className={`text-lg ${
+                                isDark ? 'text-gray-400' : 'text-gray-600'
+                            }`}>
+                                로딩 중...
+                            </p>
+                        </div>
+                    ) : users.length === 0 ? (
+                        <div className={`text-center py-16 rounded-2xl ${
+                            isDark
+                                ? 'bg-gray-900 border border-gray-800'
+                                : 'bg-gray-50 border border-gray-200'
                         }`}>
-                            첫 번째로 티어리스트를 만들어보세요!
-                        </p>
-                    </div>
+                            <p className={`text-lg ${
+                                isDark ? 'text-gray-400' : 'text-gray-600'
+                            }`}>
+                                아직 등록된 티어리스트가 없습니다
+                            </p>
+                            <p className={`text-sm mt-2 ${
+                                isDark ? 'text-gray-500' : 'text-gray-500'
+                            }`}>
+                                첫 번째로 티어리스트를 만들어보세요!
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {users.map((userProfile) => (
+                                <div
+                                    key={userProfile.uid}
+                                    onClick={() => router.push(`/profile/${userProfile.uid}`)}
+                                    className={`p-6 rounded-xl cursor-pointer transition-all transform hover:scale-105 ${
+                                        isDark
+                                            ? 'bg-gray-900 border border-gray-800 hover:border-purple-500'
+                                            : 'bg-white border border-gray-200 hover:border-purple-500 shadow-lg'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <img
+                                            src={userProfile.photoURL || '/default-avatar.png'}
+                                            alt={userProfile.displayName}
+                                            className="w-16 h-16 rounded-full object-cover"
+                                        />
+                                        <div>
+                                            <h3 className={`text-xl font-bold ${
+                                                isDark ? 'text-white' : 'text-gray-900'
+                                            }`}>
+                                                {userProfile.displayName}
+                                            </h3>
+                                            <p className={`text-sm ${
+                                                isDark ? 'text-gray-400' : 'text-gray-600'
+                                            }`}>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
