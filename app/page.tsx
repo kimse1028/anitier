@@ -58,15 +58,15 @@ export default function HomePage() {
         <div className={`min-h-screen transition-colors duration-300 ${
             isDark ? 'bg-black' : 'bg-white'
         }`}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
                 {/* 히어로 섹션 */}
-                <div className="text-center mb-16">
-                    <h1 className={`text-5xl font-bold mb-4 ${
+                <div className="text-center mb-12 sm:mb-16">
+                    <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 ${
                         isDark ? 'text-white' : 'text-gray-900'
                     }`}>
                         당신만의 애니 티어리스트를
                     </h1>
-                    <p className={`text-xl mb-8 ${
+                    <p className={`text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 px-4 ${
                         isDark ? 'text-gray-400' : 'text-gray-600'
                     }`}>
                         국가권력급부터 F랭크까지, 나만의 애니 랭킹을 만들고 공유하세요
@@ -75,7 +75,7 @@ export default function HomePage() {
                     {!user && (
                         <button
                             onClick={() => router.push('/login')}
-                            className="px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold text-lg transition-all transform hover:scale-105"
+                            className="px-6 sm:px-8 py-3 sm:py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold text-base sm:text-lg transition-all transform hover:scale-105"
                         >
                             시작하기
                         </button>
@@ -84,7 +84,7 @@ export default function HomePage() {
                     {user && (
                         <button
                             onClick={() => router.push('/my-tier')}
-                            className="px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold text-lg transition-all transform hover:scale-105"
+                            className="px-6 sm:px-8 py-3 sm:py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold text-base sm:text-lg transition-all transform hover:scale-105"
                         >
                             내 티어리스트 만들기
                         </button>
@@ -92,17 +92,17 @@ export default function HomePage() {
                 </div>
 
                 {/* 티어 등급 설명 */}
-                <div className={`rounded-2xl p-8 mb-16 ${
+                <div className={`rounded-2xl p-4 sm:p-6 lg:p-8 mb-12 sm:mb-16 ${
                     isDark
                         ? 'bg-gray-900 border border-gray-800'
                         : 'bg-gray-50 border border-gray-200'
                 }`}>
-                    <h2 className={`text-2xl font-bold mb-6 text-center ${
+                    <h2 className={`text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center ${
                         isDark ? 'text-white' : 'text-gray-900'
                     }`}>
                         티어 등급 안내
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-3 lg:gap-4">
                         {[
                             { name: '국가권력급', color: 'from-yellow-400 to-orange-500', desc: '인생 애니' },
                             { name: 'S', color: 'from-red-500 to-pink-500', desc: 'N회차 가능한 명작' },
@@ -114,10 +114,10 @@ export default function HomePage() {
                         ].map((tier) => (
                             <div
                                 key={tier.name}
-                                className={`p-4 rounded-lg bg-gradient-to-br ${tier.color} text-white text-center`}
+                                className={`p-3 sm:p-4 rounded-lg bg-gradient-to-br ${tier.color} text-white text-center`}
                             >
-                                <div className="text-2xl font-bold mb-1">{tier.name}</div>
-                                <div className="text-sm opacity-90">{tier.desc}</div>
+                                <div className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1">{tier.name}</div>
+                                <div className="text-xs sm:text-sm opacity-90">{tier.desc}</div>
                             </div>
                         ))}
                     </div>
@@ -125,31 +125,31 @@ export default function HomePage() {
 
                 {/* 사용자 목록 */}
                 <div>
-                    <h2 className={`text-3xl font-bold mb-8 ${
+                    <h2 className={`text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 ${
                         isDark ? 'text-white' : 'text-gray-900'
                     }`}>
                         모든 사용자의 티어리스트
                     </h2>
 
                     {loading ? (
-                        <div className={`text-center py-16 rounded-2xl ${
+                        <div className={`text-center py-12 sm:py-16 rounded-2xl ${
                             isDark
                                 ? 'bg-gray-900 border border-gray-800'
                                 : 'bg-gray-50 border border-gray-200'
                         }`}>
-                            <p className={`text-lg ${
+                            <p className={`text-base sm:text-lg ${
                                 isDark ? 'text-gray-400' : 'text-gray-600'
                             }`}>
                                 로딩 중...
                             </p>
                         </div>
                     ) : users.length === 0 ? (
-                        <div className={`text-center py-16 rounded-2xl ${
+                        <div className={`text-center py-12 sm:py-16 rounded-2xl ${
                             isDark
                                 ? 'bg-gray-900 border border-gray-800'
                                 : 'bg-gray-50 border border-gray-200'
                         }`}>
-                            <p className={`text-lg ${
+                            <p className={`text-base sm:text-lg ${
                                 isDark ? 'text-gray-400' : 'text-gray-600'
                             }`}>
                                 아직 등록된 티어리스트가 없습니다
@@ -161,30 +161,30 @@ export default function HomePage() {
                             </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                             {users.map((userProfile) => (
                                 <div
                                     key={userProfile.uid}
                                     onClick={() => router.push(`/profile/${userProfile.uid}`)}
-                                    className={`p-6 rounded-xl cursor-pointer transition-all transform hover:scale-105 ${
+                                    className={`p-4 sm:p-6 rounded-xl cursor-pointer transition-all transform hover:scale-105 ${
                                         isDark
                                             ? 'bg-gray-900 border border-gray-800 hover:border-purple-500'
                                             : 'bg-white border border-gray-200 hover:border-purple-500 shadow-lg'
                                     }`}
                                 >
-                                    <div className="flex items-center gap-4 mb-4">
+                                    <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
                                         <img
                                             src={userProfile.photoURL || '/default-avatar.png'}
                                             alt={userProfile.displayName}
-                                            className="w-16 h-16 rounded-full object-cover"
+                                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover"
                                         />
                                         <div>
-                                            <h3 className={`text-xl font-bold ${
+                                            <h3 className={`text-lg sm:text-xl font-bold ${
                                                 isDark ? 'text-white' : 'text-gray-900'
                                             }`}>
                                                 {userProfile.displayName}
                                             </h3>
-                                            <p className={`text-sm ${
+                                            <p className={`text-xs sm:text-sm ${
                                                 isDark ? 'text-gray-400' : 'text-gray-600'
                                             }`}>
                                             </p>

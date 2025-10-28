@@ -68,25 +68,31 @@ function SortableAnimeCard({ anime, isDark, onDelete }: { anime: AnimeItem; isDa
             ref={setNodeRef}
             style={style}
             {...attributes}
-            {...listeners}
-            className={`rounded-lg overflow-hidden group relative cursor-grab active:cursor-grabbing ${
+            className={`rounded-lg overflow-hidden group relative ${
                 isDark ? 'bg-gray-800' : 'bg-gray-100'
             }`}
         >
             <div className="aspect-[3/4] relative">
-                <img
-                    src={anime.imageUrl}
-                    alt={anime.title}
-                    className="w-full h-full object-cover"
-                    draggable={false}
-                />
+                {/* 드래그 핸들 (이미지 부분만) */}
+                <div
+                    {...listeners}
+                    className="absolute inset-0 cursor-grab active:cursor-grabbing"
+                >
+                    <img
+                        src={anime.imageUrl}
+                        alt={anime.title}
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                    />
+                </div>
+
                 {/* 삭제 버튼 */}
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
                         onDelete();
                     }}
-                    className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

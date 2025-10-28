@@ -123,24 +123,24 @@ export default function ProfilePage() {
         }`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 {/* 프로필 헤더 */}
-                <div className={`rounded-2xl p-8 mb-8 ${
+                <div className={`rounded-2xl p-4 sm:p-8 mb-8 ${
                     isDark
                         ? 'bg-gray-900 border border-gray-800'
                         : 'bg-white border border-gray-200'
                 }`}>
-                    <div className="flex items-center gap-6">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6 text-center sm:text-left">
                         <img
                             src={userInfo.photoURL || '/default-avatar.png'}
                             alt={userInfo.displayName}
-                            className="w-24 h-24 rounded-full object-cover"
+                            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover"
                         />
                         <div>
-                            <h1 className={`text-4xl font-bold mb-2 ${
+                            <h1 className={`text-2xl sm:text-4xl font-bold mb-2 ${
                                 isDark ? 'text-white' : 'text-gray-900'
                             }`}>
                                 {userInfo.displayName}의 애니 티어리스트
                             </h1>
-                            <p className={`text-lg ${
+                            <p className={`text-sm sm:text-lg ${
                                 isDark ? 'text-gray-400' : 'text-gray-600'
                             }`}>
                                 {userInfo.email}
