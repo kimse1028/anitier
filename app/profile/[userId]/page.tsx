@@ -4,7 +4,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import Comments from '@/components/Comments';
 
 // 티어 타입 정의
 type TierType = '국가권력급' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
@@ -214,23 +215,8 @@ export default function ProfilePage() {
                     ))}
                 </div>
 
-                {/* 댓글 섹션 (다음 단계에서 추가) */}
-                <div className={`mt-12 rounded-2xl p-8 ${
-                    isDark
-                        ? 'bg-gray-900 border border-gray-800'
-                        : 'bg-white border border-gray-200'
-                }`}>
-                    <h2 className={`text-2xl font-bold mb-4 ${
-                        isDark ? 'text-white' : 'text-gray-900'
-                    }`}>
-                        방명록
-                    </h2>
-                    <p className={`text-center py-8 ${
-                        isDark ? 'text-gray-600' : 'text-gray-400'
-                    }`}>
-                        댓글 기능은 다음 단계에서 추가됩니다
-                    </p>
-                </div>
+                {/* 댓글 섹션 */}
+                <Comments profileUserId={userId} />
             </div>
         </div>
     );
